@@ -1,0 +1,101 @@
+// Script to seed 20 client profiles
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+// Indian cities with coordinates
+const cities = [
+    { city: 'Mumbai', state: 'Maharashtra', lat: 19.0760, lon: 72.8777 },
+    { city: 'Delhi', state: 'Delhi', lat: 28.7041, lon: 77.1025 },
+    { city: 'Bangalore', state: 'Karnataka', lat: 12.9716, lon: 77.5946 },
+    { city: 'Chennai', state: 'Tamil Nadu', lat: 13.0827, lon: 80.2707 },
+    { city: 'Kolkata', state: 'West Bengal', lat: 22.5726, lon: 88.3639 },
+    { city: 'Hyderabad', state: 'Telangana', lat: 17.3850, lon: 78.4867 },
+    { city: 'Pune', state: 'Maharashtra', lat: 18.5204, lon: 73.8567 },
+    { city: 'Ahmedabad', state: 'Gujarat', lat: 23.0225, lon: 72.5714 },
+    { city: 'Jaipur', state: 'Rajasthan', lat: 26.9124, lon: 75.7873 },
+    { city: 'Lucknow', state: 'Uttar Pradesh', lat: 26.8467, lon: 80.9462 },
+    { city: 'Surat', state: 'Gujarat', lat: 21.1702, lon: 72.8311 },
+    { city: 'Kanpur', state: 'Uttar Pradesh', lat: 26.4499, lon: 80.3319 },
+    { city: 'Nagpur', state: 'Maharashtra', lat: 21.1458, lon: 79.0882 },
+    { city: 'Indore', state: 'Madhya Pradesh', lat: 22.7196, lon: 75.8577 },
+    { city: 'Bhopal', state: 'Madhya Pradesh', lat: 23.2599, lon: 77.4126 },
+    { city: 'Visakhapatnam', state: 'Andhra Pradesh', lat: 17.6868, lon: 83.2185 },
+    { city: 'Patna', state: 'Bihar', lat: 25.5941, lon: 85.1376 },
+    { city: 'Vadodara', state: 'Gujarat', lat: 22.3072, lon: 73.1812 },
+    { city: 'Ghaziabad', state: 'Uttar Pradesh', lat: 28.6692, lon: 77.4538 },
+    { city: 'Ludhiana', state: 'Punjab', lat: 30.9010, lon: 75.8573 }
+]
+
+// Indian names
+const firstNames = [
+    'Rajesh', 'Priya', 'Amit', 'Sneha', 'Vikram', 'Anjali', 'Rahul', 'Pooja',
+    'Arjun', 'Kavita', 'Sanjay', 'Neha', 'Karan', 'Divya', 'Rohan', 'Meera',
+    'Aditya', 'Riya', 'Nikhil', 'Shreya'
+]
+
+const lastNames = [
+    'Sharma', 'Patel', 'Kumar', 'Singh', 'Reddy', 'Gupta', 'Verma', 'Joshi',
+    'Mehta', 'Nair', 'Rao', 'Iyer', 'Desai', 'Malhotra', 'Kapoor', 'Agarwal',
+    'Chopra', 'Bose', 'Pillai', 'Menon'
+]
+
+const accountTypes = ['SAVINGS', 'CURRENT']
+const kycStatuses = ['MIN_KYC', 'FULL_KYC']
+
+async function seedProfiles() {
+    console.log('🌱 Seeding 20 client profiles...\n')
+
+    const profiles = []
+
+    for (let i = 0; i < 20; i++) {
+        const cityData = cities[i]
+        const customerId = `CUST_IND_${String(i + 1).padStart(6, '0')}`
+        const accountId = `ACC_IND_${String(i + 1).padStart(9, '0')}`
+        const userName = `${firstNames[i]} ${lastNames[i]}`
+
+        try {
+            const profile = await prisma.clientProfile.create({
+                data: {
+                    customerId,
+                    accountId,
+                    userName,
+                    accountType: accountTypes[Math.floor(Math.random() * accountTypes.length)],
+                    accountAgeDays: Math.floor(Math.random() * 2000) + 365, // 1-6 years
+                    accountCreatedAt: new Date(Date.now() - (Math.floor(Math.random() * 2000) + 365) * 24 * 60 * 60 * 1000),
+                    kycStatus: kycStatuses[Math.floor(Math.random() * kycStatuses.length)],
+
+                    state: cityData.state,
+                    city: cityData.city,
+                    latitude: cityData.lat,
+                    longitude: cityData.lon,
+
+                    monthlyLimit: [50000, 100000, 200000, 500000][Math.floor(Math.random() * 4)],
+                    currentMonthSpend: Math.floor(Math.random() * 30000),
+
+                    last30Transactions: []
+                }
+            })
+
+            profiles.push(profile)
+            console.log(`✅ Created: ${customerId} - ${userName} - ${cityData.city}, ${cityData.state}`)
+
+        } catch (error) {
+            if (error.code === 'P2002') {
+                console.log(`⚠️  Skipped: ${customerId} (already exists)`)
+            } else {
+                console.error(`❌ Error creating ${customerId}:`, error.message)
+            }
+        }
+    }
+
+    console.log(`\n✅ Successfully seeded ${profiles.length} client profiles!`)
+    console.log('\nSample profiles:')
+    profiles.slice(0, 5).forEach(p => {
+        console.log(`  - ${p.customerId}: ${p.userName} - ${p.city}, ${p.state} (${p.accountType}, ${p.kycStatus})`)
+    })
+}
+
+seedProfiles()
+    .catch(console.error)
+    .finally(() => prisma.$disconnect())
