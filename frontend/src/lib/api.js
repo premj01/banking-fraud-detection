@@ -175,6 +175,33 @@ export async function fetchAnalyticsTrends() {
 }
 
 /**
+ * Fetch full analytics data
+ * @returns {Promise<Object>} Full analytics data containing summary, trends, and hourly
+ */
+export async function fetchAnalyticsFull() {
+    const response = await fetch(`${API_BASE_URL}/api/analytics/full`);
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch full analytics: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch full analytics');
+    }
+
+    return {
+        summary: data.data.summary,
+        trends: data.data.trends,
+        hourly: {
+            hourlyVolume: transformHourlyVolume(data.data.hourly.hourlyVolume),
+            peakFraudHours: data.data.hourly.peakFraudHours || []
+        }
+    };
+}
+
+/**
  * Transform hourly volume array to chart data
  * @param {Array} volumes - Array of 24 hourly volumes
  * @returns {Array} Chart data with time labels
@@ -201,5 +228,6 @@ export default {
     fetchHourlyAnalytics,
     fetchAnalyticsSummary,
     fetchAnalyticsTrends,
+    fetchAnalyticsFull,
     transformTransaction,
 };
