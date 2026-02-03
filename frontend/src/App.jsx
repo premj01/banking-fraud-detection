@@ -14,6 +14,7 @@ import Investigators from "@/pages/Investigators"
 import Model from "@/pages/Model"
 import Alerts from "@/pages/Alerts"
 import Settings from "@/pages/Settings"
+import GraphAnalysis from "@/pages/GraphAnalysis"
 
 function App() {
   return (
@@ -89,6 +90,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Settings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/graph-analysis"
+                element={
+                  <ProtectedRoute>
+                    <GraphAnalysis />
                   </ProtectedRoute>
                 }
               />

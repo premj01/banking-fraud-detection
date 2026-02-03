@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { generateInvestigators } from "@/lib/mockData";
@@ -26,11 +27,13 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Investigators() {
     const { user } = useAuth();
+    const [searchParams] = useSearchParams();
     const [investigators, setInvestigators] = useState([]);
     const [selectedInvestigator, setSelectedInvestigator] = useState(null);
 
     useEffect(() => {
         const mocks = generateInvestigators(12);
+        let allInvestigators = mocks;
 
         if (user) {
             // Create a mock profile for the current logged-in user
@@ -45,11 +48,21 @@ export default function Investigators() {
                 workload: 'Low',
                 isCurrentUser: true
             };
-            setInvestigators([currentUserProfile, ...mocks]);
-        } else {
-            setInvestigators(mocks);
+            allInvestigators = [currentUserProfile, ...mocks];
         }
-    }, [user]);
+
+        setInvestigators(allInvestigators);
+
+        // Deep linking: Select investigator if query param exists
+        const linkedId = searchParams.get('id');
+        if (linkedId) {
+            // Find by exact ID or simple match
+            const found = allInvestigators.find(inv => inv.id === linkedId || inv.name.toLowerCase().includes(linkedId.toLowerCase()));
+            if (found) {
+                setSelectedInvestigator(found);
+            }
+        }
+    }, [user, searchParams]);
 
     const totalOpen = investigators.reduce((sum, inv) => sum + inv.open_cases, 0);
     const totalClosed = investigators.reduce((sum, inv) => sum + inv.closed_cases, 0);

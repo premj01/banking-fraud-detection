@@ -3,7 +3,17 @@
  */
 
 // Use relative URL to leverage Vite's proxy, or fall back to direct URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+let API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+// Prevent double /api prefix if the env var includes it
+if (API_BASE_URL.endsWith('/api')) {
+    API_BASE_URL = API_BASE_URL.slice(0, -4);
+}
+
+// Remove trailing slash if present (to avoid double slashes)
+if (API_BASE_URL.endsWith('/')) {
+    API_BASE_URL = API_BASE_URL.slice(0, -1);
+}
 
 /**
  * Fetch recent transactions from the backend

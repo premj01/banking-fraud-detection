@@ -14,6 +14,7 @@ import {
     ChevronRight,
     LogOut,
     User,
+    Share2, // Graph Icon
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +34,7 @@ const navItems = [
     { icon: BarChart3, label: 'Analytics', path: '/analytics' },
     { icon: Search, label: 'Drill-Down', path: '/drilldown' },
     { icon: Users, label: 'Investigators', path: '/investigators' },
+    { icon: Share2, label: 'Graph Intelligence', path: '/graph-analysis' },
     { icon: Brain, label: 'Model', path: '/model' },
 ];
 
