@@ -1,6 +1,7 @@
 import fraudDetectionService from '../services/fraud-detection.service.js'
 import fraudTransactionRepository from '../repositories/fraud-transaction.repository.js'
 import clientProfileRepository from '../repositories/client-profile.repository.js'
+import analyticsService from '../services/analytics.service.js'
 
 export const detectFraud = async (req, res, next) => {
     try {
@@ -110,6 +111,11 @@ export const detectFraud = async (req, res, next) => {
         // Broadcast full data via WebSocket
         const io = req.app.get('io')
         io.emit('real-time-stream', fullResponse)
+
+        // Record transaction for analytics (fire and forget)
+        analyticsService.recordTransaction(txnData, fraudResult).catch(err => {
+            console.error('Analytics recording error:', err.message)
+        })
 
         // Also send API response with full data
         res.json({

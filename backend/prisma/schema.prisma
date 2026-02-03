@@ -101,3 +101,29 @@ model FraudTransaction {
   @@index([isFraud])
   @@map("fraud_transactions")
 }
+
+model DailyStats {
+  id                  String   @id @default(cuid())
+  date                DateTime @unique @db.Date
+  
+  // Transaction counts
+  totalTransactions   Int      @default(0) @map("total_transactions")
+  flaggedTransactions Int      @default(0) @map("flagged_transactions")
+  openAlerts          Int      @default(0) @map("open_alerts")
+  
+  // Money tracking
+  totalAmount         Float    @default(0) @map("total_amount")
+  flaggedAmount       Float    @default(0) @map("flagged_amount")
+  
+  // Rates
+  avgRiskScore        Float    @default(0) @map("avg_risk_score")
+  
+  // Hourly breakdown (JSON arrays of 24 values)
+  hourlyVolume        Json     @default("[]") @map("hourly_volume")
+  hourlyFraudCount    Json     @default("[]") @map("hourly_fraud_count")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  @@map("daily_stats")
+}
