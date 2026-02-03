@@ -1,0 +1,14 @@
+{
+    "name": "demo-data",
+    "version": "1.0.0",
+    "description": "Demo transaction generator and streamer for fraud detection",
+    "type": "module",
+    "scripts": {
+        "generate": "node stream-transactions.js --generate-only",
+        "stream": "node stream-transactions.js",
+        "stream-only": "node stream-transactions.js --stream-only"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}

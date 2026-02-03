@@ -19,3 +19,111 @@ model User {
 
   @@map("users")
 }
+
+model ClientProfile {
+  id                    String   @id @default(cuid())
+  customerId            String   @unique @map("customer_id")
+  accountId             String   @unique @map("account_id")
+  userName              String   @default("Unknown User") @map("user_name")
+  accountType           String   @map("account_type")
+  accountAgeDays        Int      @map("account_age_days")
+  accountCreatedAt      DateTime @map("account_created_at")
+  kycStatus             String   @map("kyc_status")
+  
+  state                 String?
+  city                  String?
+  latitude              Float?
+  longitude             Float?
+  
+  monthlyLimit          Float    @default(100000) @map("monthly_limit")
+  currentMonthSpend     Float    @default(0) @map("current_month_spend")
+  
+  flaggedScore          Float    @default(0) @map("flagged_score")
+  
+  last30Transactions    Json     @default("[]") @map("last_30_transactions")
+  
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@map("client_profiles")
+}
+
+model FraudTransaction {
+  id                              String   @id @default(cuid())
+  transactionId                   String   @unique @map("transaction_id")
+  transactionType                 String   @map("transaction_type")
+  transactionStatus               String   @map("transaction_status")
+  transactionTimestamp            DateTime @map("transaction_timestamp")
+  
+  amountValue                     Float    @map("amount_value")
+  amountCurrency                  String   @default("INR") @map("amount_currency")
+  
+  senderCustomerId                String   @map("sender_customer_id")
+  senderUserName                  String?  @map("sender_user_name")
+  senderAccountId                 String   @map("sender_account_id")
+  senderAccountType               String?  @map("sender_account_type")
+  senderKycStatus                 String?  @map("sender_kyc_status")
+  senderAccountAgeDays            Int?     @map("sender_account_age_days")
+  senderState                     String?  @map("sender_state")
+  senderCity                      String?  @map("sender_city")
+  currentLatitude                 Float?   @map("current_latitude")
+  currentLongitude                Float?   @map("current_longitude")
+  senderTxnCount1min              Int?     @map("sender_txn_count_1min")
+  senderTxnCount10min             Int?     @map("sender_txn_count_10min")
+  senderAmount24hr                Float?   @map("sender_amount_24hr")
+  
+  deviceType                      String?  @map("device_type")
+  deviceOs                        String?  @map("device_os")
+  appVersion                      String?  @map("app_version")
+  ipRisk                          String?  @map("ip_risk")
+  
+  receiverType                    String?  @map("receiver_type")
+  receiverBank                    String?  @map("receiver_bank")
+  merchantCategory                String?  @map("merchant_category")
+  merchantRiskLevel               String?  @map("merchant_risk_level")
+  
+  paymentMethod                   String?  @map("payment_method")
+  authorizationType               String?  @map("authorization_type")
+  
+  isFraud                         Boolean  @map("is_fraud")
+  riskScore                       Float?   @map("risk_score")
+  fraudReasonUnusualAmount        Boolean  @default(false) @map("fraud_reason_unusual_amount")
+  fraudReasonGeoDistanceAnomaly   Boolean  @default(false) @map("fraud_reason_geo_distance_anomaly")
+  fraudReasonHighVelocity         Boolean  @default(false) @map("fraud_reason_high_velocity")
+  fraudSeverity                   String?  @map("fraud_severity")
+  flagColor                       String?  @map("flag_color")
+  reasonOfFraud                   String?  @map("reason_of_fraud")
+  
+  createdAt                       DateTime @default(now()) @map("created_at")
+
+  @@index([senderCustomerId])
+  @@index([transactionTimestamp])
+  @@index([isFraud])
+  @@map("fraud_transactions")
+}
+
+model DailyStats {
+  id                  String   @id @default(cuid())
+  date                DateTime @unique @db.Date
+  
+  // Transaction counts
+  totalTransactions   Int      @default(0) @map("total_transactions")
+  flaggedTransactions Int      @default(0) @map("flagged_transactions")
+  openAlerts          Int      @default(0) @map("open_alerts")
+  
+  // Money tracking
+  totalAmount         Float    @default(0) @map("total_amount")
+  flaggedAmount       Float    @default(0) @map("flagged_amount")
+  
+  // Rates
+  avgRiskScore        Float    @default(0) @map("avg_risk_score")
+  
+  // Hourly breakdown (JSON arrays of 24 values)
+  hourlyVolume        Json     @default("[]") @map("hourly_volume")
+  hourlyFraudCount    Json     @default("[]") @map("hourly_fraud_count")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  @@map("daily_stats")
+}

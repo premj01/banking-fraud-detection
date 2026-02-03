@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package fraud_detection;
+
+service FraudDetectionService {
+  rpc DetectFraud (TransactionRequest) returns (FraudResponse);
+}
+
+message TransactionRequest {
+  string transaction_id = 1;
+  string transaction_type = 2;
+  string transaction_timestamp = 3;
+  double amount_value = 4;
+  string amount_currency = 5;
+  
+  string sender_customer_id = 6;
+  string sender_account_id = 7;
+  string sender_account_type = 8;
+  string sender_kyc_status = 9;
+  int32 sender_account_age_days = 10;
+  string sender_state = 11;
+  string sender_city = 12;
+  int32 sender_txn_count_1min = 13;
+  int32 sender_txn_count_10min = 14;
+  double sender_amount_24hr = 15;
+  
+  string device_type = 16;
+  string device_os = 17;
+  string app_version = 18;
+  string ip_risk = 19;
+  
+  string receiver_type = 20;
+  string receiver_bank = 21;
+  string merchant_category = 22;
+  string merchant_risk_level = 23;
+  
+  string payment_method = 24;
+  string authorization_type = 25;
+}
+
+message FraudResponse {
+  bool is_fraud = 1;
+  double risk_score = 2;
+  bool fraud_reason_unusual_amount = 3;
+  bool fraud_reason_geo_distance_anomaly = 4;
+  bool fraud_reason_high_velocity = 5;
+  string fraud_severity = 6;
+  string flag_color = 7;
+  string reason_of_fraud = 8;
+}
