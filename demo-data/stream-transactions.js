@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename)
 
 // Configuration
 const API_URL = 'http://localhost:5000/api/transactions/detect'
-const INTERVAL_MS = 2000 // 2 seconds between requests
+const INTERVAL_MS = 10 // 2 seconds between requests
 const TOTAL_TRANSACTIONS = 150
 
 // Load user profiles
