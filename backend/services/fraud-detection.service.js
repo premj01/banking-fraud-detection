@@ -1,8 +1,11 @@
 import { FRAUD_RULES } from '../config/fraud-rules.js'
 import clientProfileRepository from '../repositories/client-profile.repository.js'
 import fraudTransactionRepository from '../repositories/fraud-transaction.repository.js'
-import fraudClient from '../grpc/fraud-client.js'
+// import fraudClient from '../grpc/fraud-client.js' // Commented: Using REST API instead
 import { calculateDistance } from '../utils/geo-calculator.js'
+
+// ML Model REST API endpoint
+const ML_API_URL = 'http://localhost:8000/score_dict'
 
 export class FraudDetectionService {
 
@@ -97,7 +100,7 @@ export class FraudDetectionService {
             mean: Math.round(mean * 100) / 100,
             stdDev: Math.round(stdDev * 100) / 100,
             severity,
-            details: isAnomaly 
+            details: isAnomaly
                 ? `Amount ₹${txnAmount} is ${Math.abs(zScore).toFixed(1)} std deviations from average ₹${mean.toFixed(0)}`
                 : 'Amount is within normal range'
         }
@@ -111,18 +114,18 @@ export class FraudDetectionService {
         }
 
         const amounts = transactions.map(t => t.amount)
-        
+
         // Check for exact match patterns
         const exactMatches = amounts.filter(a => a === txnAmount).length
-        
+
         // Check for similar amounts (within 5% tolerance)
         const tolerance = txnAmount * 0.05
         const similarMatches = amounts.filter(a => Math.abs(a - txnAmount) <= tolerance).length
-        
+
         // Calculate pattern score
         const totalTxns = transactions.length
         const patternFrequency = similarMatches / totalTxns
-        
+
         // Flag if same amount appears more than 30% of the time
         const isPattern = patternFrequency > 0.3 && similarMatches >= 3
 
@@ -131,7 +134,7 @@ export class FraudDetectionService {
             exactMatches,
             similarMatches,
             frequency: Math.round(patternFrequency * 100),
-            details: isPattern 
+            details: isPattern
                 ? `Repeated amount pattern: ₹${txnAmount} appears ${similarMatches} times (${Math.round(patternFrequency * 100)}% of transactions)`
                 : 'No suspicious patterns detected'
         }
@@ -145,7 +148,7 @@ export class FraudDetectionService {
         }
 
         // Sort transactions by timestamp (newest first)
-        const sorted = [...transactions].sort((a, b) => 
+        const sorted = [...transactions].sort((a, b) =>
             new Date(b.timestamp) - new Date(a.timestamp)
         )
 
@@ -175,7 +178,7 @@ export class FraudDetectionService {
             spikeRatio: Math.round(spikeRatio * 100) / 100,
             recentAvg: Math.round(recentWithCurrent),
             historicalAvg: Math.round(historicalAvg),
-            details: isSpike 
+            details: isSpike
                 ? `Spending spike detected: Recent avg ₹${Math.round(recentWithCurrent)} is ${spikeRatio.toFixed(1)}x historical avg ₹${Math.round(historicalAvg)}`
                 : 'Spending pattern is normal'
         }
@@ -226,7 +229,7 @@ export class FraudDetectionService {
         // Check 2: Statistical Amount Anomaly Detection (Z-Score)
         if (senderProfile.last30Transactions && senderProfile.last30Transactions.length >= 5) {
             const amountAnalysis = this.detectAmountAnomaly(
-                txnData.amount_value, 
+                txnData.amount_value,
                 senderProfile.last30Transactions
             )
             analysisResults.amountAnomaly = amountAnalysis
@@ -271,7 +274,7 @@ export class FraudDetectionService {
         // Check 5: Geographic anomaly (only if coordinates are available)
         if (senderProfile.latitude && senderProfile.longitude &&
             txnData.current_latitude && txnData.current_longitude) {
-            
+
             const distance = calculateDistance(
                 senderProfile.latitude,
                 senderProfile.longitude,
@@ -313,22 +316,83 @@ export class FraudDetectionService {
         return { profile: senderProfile, fraud: null, analysis: analysisResults }
     }
 
-    // STEP 4: Call gRPC ML Model
+    // STEP 4: Call ML Model via REST API
     async callMLModel(txnData) {
         try {
-            const response = await fraudClient.detectFraud(txnData)
+            // Calculate Transaction_Amount_Deviation from profile history
+            const profile = await clientProfileRepository.findByCustomerId(txnData.sender_customer_id)
+            let amountDeviation = 0
+            if (profile && profile.last30Transactions && profile.last30Transactions.length > 0) {
+                const amounts = profile.last30Transactions.map(t => t.amount)
+                const mean = amounts.reduce((s, v) => s + v, 0) / amounts.length
+                if (mean > 0) {
+                    amountDeviation = ((txnData.amount_value - mean) / mean) * 100
+                }
+            }
+
+            // Prepare request for ML model
+            const timestamp = new Date(txnData.transaction_timestamp)
+            const mlRequest = {
+                transaction: {
+                    amount: txnData.amount_value,
+                    Transaction_Amount_Deviation: Math.round(amountDeviation),
+                    Transaction_Frequency: txnData.sender_txn_count_10min || 1,
+                    Days_Since_Last_Transaction: 1, // Default to 1 day
+                    Date: timestamp.toISOString().split('T')[0],
+                    Time: timestamp.toISOString().split('T')[1].split('.')[0],
+                    Transaction_Status: txnData.transaction_status || 'Success',
+                    Transaction_Type: txnData.payment_method || 'UPI',
+                    Device_OS: txnData.device_os || 'Android',
+                    Merchant_Category: txnData.merchant_category || 'Retail',
+                    Merchant_Risk_Level: txnData.merchant_risk_level === 'HIGH' ? 4 :
+                        txnData.merchant_risk_level === 'MEDIUM' ? 2 : 1
+                }
+            }
+
+            console.log('📡 Calling ML API:', ML_API_URL)
+            const response = await fetch(ML_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mlRequest)
+            })
+
+            if (!response.ok) {
+                throw new Error(`ML API returned ${response.status}`)
+            }
+
+            const mlResult = await response.json()
+            console.log('🤖 ML Response:', mlResult)
+
+            // Map ML response to our fraud result format
+            const isFraud = mlResult.is_flagged || mlResult.ensemble_score > 0.5
+            const riskScore = mlResult.ensemble_score || mlResult.confidence || 0
+
+            // Determine severity and flag color from ML response
+            const severity = mlResult.severity || (riskScore > 0.7 ? 'HIGH' : riskScore > 0.4 ? 'MEDIUM' : 'LOW')
+            const flagColor = severity === 'HIGH' ? 'RED' : severity === 'MEDIUM' ? 'ORANGE' : 'GREEN'
+
             return {
-                is_fraud: response.is_fraud,
-                risk_score: response.risk_score,
-                fraud_reason_unusual_amount: response.fraud_reason_unusual_amount,
-                fraud_reason_geo_distance_anomaly: response.fraud_reason_geo_distance_anomaly,
-                fraud_reason_high_velocity: response.fraud_reason_high_velocity,
-                fraud_severity: response.fraud_severity,
-                flag_color: response.flag_color,
-                reason_of_fraud: response.reason_of_fraud
+                is_fraud: isFraud,
+                risk_score: riskScore,
+                fraud_reason_unusual_amount: mlResult.iso_score > 0.5,
+                fraud_reason_geo_distance_anomaly: false,
+                fraud_reason_high_velocity: mlResult.rf_proba > 0.5,
+                fraud_severity: severity,
+                flag_color: flagColor,
+                reason_of_fraud: isFraud
+                    ? `ML Detection: ${mlResult.recommended_action || 'Flagged by model'} (Score: ${(riskScore * 100).toFixed(1)}%)`
+                    : 'Transaction approved by ML model',
+                // Include raw ML scores for analysis
+                ml_scores: {
+                    iso_score: mlResult.iso_score,
+                    rf_proba: mlResult.rf_proba,
+                    xgb_proba: mlResult.xgb_proba,
+                    ensemble_score: mlResult.ensemble_score,
+                    confidence: mlResult.confidence
+                }
             }
         } catch (error) {
-            console.error('gRPC call failed:', error.message)
+            console.error('❌ ML API call failed:', error.message)
             // Fallback: No fraud detected
             return {
                 is_fraud: false,
@@ -354,10 +418,10 @@ export class FraudDetectionService {
             await this.logFraudTransaction(txnData, staticFraud)
             // Increment flagged score for fraud
             await this.updateFlaggedScore(txnData.sender_customer_id, staticFraud.risk_score)
-            
+
             // Fetch profile for response even though we detected fraud via static rules
             senderProfile = await clientProfileRepository.findByCustomerId(txnData.sender_customer_id)
-            
+
             return {
                 fraudResult: staticFraud,
                 profile: senderProfile,
@@ -375,7 +439,7 @@ export class FraudDetectionService {
             await this.logFraudTransaction(txnData, behavioralResult.fraud)
             // Increment flagged score for fraud
             await this.updateFlaggedScore(txnData.sender_customer_id, behavioralResult.fraud.risk_score)
-            
+
             return {
                 fraudResult: behavioralResult.fraud,
                 profile: senderProfile,
