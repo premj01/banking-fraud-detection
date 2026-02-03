@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename)
 
 // Configuration
 const API_URL = 'http://localhost:5000/api/transactions/detect'
-const INTERVAL_MS = 2000 // 2 seconds between requests
+const INTERVAL_MS = 100 // 2 seconds between requests
 const TOTAL_TRANSACTIONS = 150
 
 // Load user profiles
@@ -203,6 +203,27 @@ function generateTransaction(index) {
         receiver_bank: randomChoice(RECEIVER_BANKS),
         merchant_category: randomChoice(MERCHANT_CATEGORIES),
         merchant_risk_level: scenarioData.merchant_risk_level || 'LOW',
+        ...(() => {
+            const receiverType = randomChoice(RECEIVER_TYPES);
+            if (receiverType === 'INDIVIDUAL' || receiverType === 'BUSINESS') {
+                // Pick a random receiver profile that isn't the sender
+                const validReceivers = profiles.filter(p => p.customer_id !== profile.customer_id);
+                const receiverProfile = randomChoice(validReceivers);
+                return {
+                    receiver_type: receiverType,
+                    receiver_account_id: receiverProfile.account_id,
+                    receiver_user_name: receiverProfile.user_name
+                };
+            } else {
+                // Generate Merchant/Utility ID
+                const merchId = `MERCH_${randomInt(1000, 9999)}`;
+                return {
+                    receiver_type: receiverType,
+                    receiver_account_id: merchId,
+                    receiver_user_name: `${randomChoice(MERCHANT_CATEGORIES)} Outlet ${randomInt(1, 100)}`
+                };
+            }
+        })(),
 
         // Payment info
         payment_method: randomChoice(PAYMENT_METHODS),

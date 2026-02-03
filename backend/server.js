@@ -9,6 +9,7 @@ import prisma from './lib/prisma.js'
 import authRoutes from './routes/auth.routes.js'
 import fraudRoutes from './routes/fraud.routes.js'
 import analyticsRoutes from './routes/analytics.routes.js'
+import graphRoutes from './routes/graph.routes.js'
 import { errorHandler } from './middleware/error.middleware.js'
 
 dotenv.config()
@@ -49,6 +50,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/transactions', fraudRoutes)
 app.use('/api/analytics', analyticsRoutes)
+app.use('/api/graph', graphRoutes)
 
 // Error handling
 app.use(errorHandler)

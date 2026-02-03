@@ -9,8 +9,8 @@ import joblib
 from data_processor import DataPreprocessor
 from ml_models import MLModels
 
-DATA_PATH = r"c:\Users\ringa\OneDrive\Desktop\project\new\Copy of Sample_DATA.csv"
-MODEL_DIR = os.path.join(os.getcwd(), 'models')
+DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Copy of Sample_DATA.csv")
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'models')
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 print('\n' + '='*70)

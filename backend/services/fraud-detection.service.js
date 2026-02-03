@@ -316,7 +316,7 @@ export class FraudDetectionService {
         return { profile: senderProfile, fraud: null, analysis: analysisResults }
     }
 
-    // STEP 4: Call ML Model via REST API
+    // STEP 4: Call ML Model via REST API - GRPC
     async callMLModel(txnData) {
         try {
             // Calculate Transaction_Amount_Deviation from profile history

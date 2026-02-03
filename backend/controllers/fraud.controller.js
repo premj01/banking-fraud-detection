@@ -56,7 +56,9 @@ export const detectFraud = async (req, res, next) => {
                 receiver_type: txnData.receiver_type,
                 receiver_bank: txnData.receiver_bank,
                 merchant_category: txnData.merchant_category,
-                merchant_risk_level: txnData.merchant_risk_level
+                merchant_risk_level: txnData.merchant_risk_level,
+                account_id: txnData.receiver_account_id,
+                user_name: txnData.receiver_user_name
             },
 
             // Fraud Detection Result
