@@ -20,9 +20,9 @@ export function Navbar() {
       <div className="container flex h-14 items-center">
         <div className="mr-4 hidden md:flex">
           <Link to="/" className="mr-6 flex items-center space-x-2">
-            <LayoutDashboard className="h-6 w-6" />
+            <LayoutDashboard className="h-6 w-6 ml-4" />
             <span className="hidden font-primary font-bold sm:inline-block">
-              Auth App
+              Fraud Shield
             </span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
@@ -66,7 +66,7 @@ export function Navbar() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2 mr-4">
                 <Button variant="ghost" asChild>
                   <Link to="/signin">Sign In</Link>
                 </Button>
