@@ -34,7 +34,8 @@ export function AlertItem({ alert, onClick, compact = false }) {
         },
     };
 
-    const config = severityConfig[alert.severity];
+    const severityKey = alert.severity ? alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1).toLowerCase() : 'Medium';
+    const config = severityConfig[severityKey] || severityConfig['Medium'];
     const Icon = config.icon;
 
     const statusColors = {
@@ -59,7 +60,7 @@ export function AlertItem({ alert, onClick, compact = false }) {
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{alert.alert_type}</p>
                     <p className="text-xs text-muted-foreground">
-                        ₹{alert.amount.toLocaleString()} • {formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}
+                        ₹{alert.amount.toLocaleString()} • {formatDistanceToNow(new Date(alert.timestamp || new Date()), { addSuffix: true })}
                     </p>
                 </div>
                 <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-medium", statusColors[alert.status])}>
@@ -92,7 +93,7 @@ export function AlertItem({ alert, onClick, compact = false }) {
                     <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
                         <span>Amount: ₹{alert.amount.toLocaleString()}</span>
                         <span>ID: {alert.transaction_id}</span>
-                        <span>{formatDistanceToNow(new Date(alert.created_at), { addSuffix: true })}</span>
+                        <span>{formatDistanceToNow(new Date(alert.timestamp || new Date()), { addSuffix: true })}</span>
                     </div>
                     {alert.rule_triggers.length > 0 && (
                         <div className="flex flex-wrap gap-1 mt-2">

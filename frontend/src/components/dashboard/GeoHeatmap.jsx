@@ -82,7 +82,7 @@ export function GeoHeatmap({ data, className }) {
                             <div className="bg-popover border border-border px-3 py-2 rounded-lg text-xs whitespace-nowrap shadow-lg">
                                 <p className="font-medium">{city.city}</p>
                                 <p className="text-muted-foreground">
-                                    {city.fraud_count} flagged / {city.total_transactions.toLocaleString()} total
+                                    {city.fraud_count} flagged / {(city.total_transactions || 0).toLocaleString()} total
                                 </p>
                                 <p className="text-muted-foreground">
                                     Risk: {(city.risk_score * 100).toFixed(0)}%

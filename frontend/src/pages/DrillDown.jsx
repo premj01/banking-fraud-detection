@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { generateTransactions, generateUserProfile, generateFraudAlerts } from "@/lib/mockData";
-import { useSearchParams } from "react-router-dom";
+import { fetchUserTransactions } from "@/lib/api";
+import { transformTransaction } from "@/lib/api";
+import socket from "@/lib/socket";
+import { useSearchParams, useLocation } from "react-router-dom";
 import {
     MapPin,
     Smartphone,
@@ -20,34 +23,181 @@ import { Sparkline } from "@/components/dashboard/Charts";
 
 export default function DrillDown() {
     const [searchParams] = useSearchParams();
+    const location = useLocation();
     const [user, setUser] = useState(null);
     const [transactions, setTransactions] = useState([]);
     const [selectedTxn, setSelectedTxn] = useState(null);
     const [alerts, setAlerts] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentCustomerId, setCurrentCustomerId] = useState(null);
+    const [isSocketConnected, setIsSocketConnected] = useState(false);
+    const [newTransactionCount, setNewTransactionCount] = useState(0);
 
     useEffect(() => {
-        const txnId = searchParams.get('txn');
-        const txns = generateTransactions(25);
-        setTransactions(txns);
+        const loadData = async () => {
+            setIsLoading(true);
+            
+            // Get transaction from navigation state or URL param
+            const txnId = searchParams.get('txn');
+            const passedTransaction = location.state?.transaction;
+            
+            if (passedTransaction) {
+                // Use the transaction passed from Monitoring page
+                setSelectedTxn(passedTransaction);
+                
+                // Extract user profile from transaction data
+                const userProfile = extractUserProfile(passedTransaction);
+                setUser(userProfile);
+                setCurrentCustomerId(userProfile.customer_id);
+                
+                // Fetch real transaction history from API
+                try {
+                    const customerId = userProfile.customer_id;
+                    if (customerId) {
+                        const userTxns = await fetchUserTransactions(customerId, 25);
+                        setTransactions(userTxns);
+                    } else {
+                        // Fallback to mock if no customer ID
+                        setTransactions(generateTransactions(25));
+                    }
+                } catch (error) {
+                    console.error('Failed to load user transactions:', error);
+                    // Fallback to mock data on error
+                    setTransactions(generateTransactions(25));
+                }
+                
+                // Mock alerts for now
+                setAlerts(generateFraudAlerts(5));
+            } else if (txnId) {
+                // Fallback to mock data if no state passed
+                const txns = generateTransactions(25);
+                setTransactions(txns);
+                const found = txns.find(t => t.transaction_id === txnId) || txns[0];
+                setSelectedTxn(found);
+                setUser(generateUserProfile(found.user_id));
+                setAlerts(generateFraudAlerts(5));
+            } else {
+                // No transaction specified, use mock data
+                const txns = generateTransactions(25);
+                setTransactions(txns);
+                setSelectedTxn(txns[0]);
+                setUser(generateUserProfile(txns[0].user_id));
+                setAlerts(generateFraudAlerts(5));
+            }
+            
+            setIsLoading(false);
+        };
+        
+        loadData();
+    }, [searchParams, location.state]);
 
-        if (txnId) {
-            const found = txns.find(t => t.transaction_id === txnId) || txns[0];
-            setSelectedTxn(found);
-            setUser(generateUserProfile(found.user_id));
-            setAlerts(generateFraudAlerts(5).filter(a => a.user_id === found.user_id || Math.random() > 0.5));
+    // Socket.IO real-time updates for this user's transactions
+    useEffect(() => {
+        if (!currentCustomerId) return;
+
+        const onConnect = () => {
+            console.log('🔌 Socket connected for DrillDown');
+            setIsSocketConnected(true);
+        };
+
+        const onDisconnect = () => {
+            console.log('🔌 Socket disconnected');
+            setIsSocketConnected(false);
+        };
+
+        const onRealTimeStream = (data) => {
+            // Check if this transaction belongs to the current user
+            const txnCustomerId = data.sender?.customer_id || data.profile?.customer_id;
+            
+            if (txnCustomerId === currentCustomerId) {
+                console.log('📨 New transaction for current user:', data.transaction?.transaction_id);
+                const transformedTxn = transformTransaction(data);
+                
+                setTransactions(prev => {
+                    // Add new transaction at the beginning
+                    const updated = [transformedTxn, ...prev];
+                    return updated.slice(0, 25); // Keep only 25 most recent
+                });
+                
+                // Increment new transaction counter
+                setNewTransactionCount(prev => prev + 1);
+                
+                // Reset counter after 3 seconds
+                setTimeout(() => {
+                    setNewTransactionCount(prev => Math.max(0, prev - 1));
+                }, 3000);
+            }
+        };
+
+        // Register socket listeners
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+        socket.on('real-time-stream', onRealTimeStream);
+
+        // Connect if not already connected
+        if (!socket.connected) {
+            socket.connect();
         } else {
-            setSelectedTxn(txns[0]);
-            setUser(generateUserProfile(txns[0].user_id));
-            setAlerts(generateFraudAlerts(5));
+            setIsSocketConnected(true);
         }
-    }, [searchParams]);
 
-    if (!user || !selectedTxn) return null;
+        // Cleanup
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            socket.off('real-time-stream', onRealTimeStream);
+        };
+    }, [currentCustomerId]);
+
+    // Extract user profile from transaction data
+    const extractUserProfile = (txn) => {
+        const profile = txn._original?.profile;
+        const sender = txn._original?.sender;
+        
+        return {
+            name: sender?.user_name || txn.merchant_name || 'Unknown User',
+            email: `${sender?.customer_id || 'user'}@example.com`,
+            phone: '+91 XXXX-XXXX-XX',
+            risk_level: txn.risk_score > 0.7 ? 'High' : txn.risk_score > 0.4 ? 'Medium' : 'Low',
+            account_status: sender?.kyc_status || 'Active',
+            account_age_days: sender?.account_age_days || profile?.account_age_days || 0,
+            total_transactions: profile?.transaction_history_count || 0,
+            flagged_transactions: Math.floor((profile?.flagged_score || 0) / 5),
+            known_devices: 1,
+            avg_transaction_amount: profile?.current_month_spend 
+                ? Math.floor(profile.current_month_spend / (profile.transaction_history_count || 1))
+                : 0,
+            daily_transaction_count: 3,
+            usual_locations: [sender?.city, sender?.state].filter(Boolean),
+            last_login: new Date().toISOString(),
+            customer_id: sender?.customer_id || profile?.customer_id,
+            account_id: sender?.account_id || profile?.account_id,
+            monthly_limit: profile?.monthly_limit || 0,
+            current_month_spend: profile?.current_month_spend || 0,
+            flagged_score: profile?.flagged_score || 0,
+        };
+    };
+
+    if (isLoading || !user || !selectedTxn) {
+        return (
+            <DashboardLayout title="Transaction Drill-Down" subtitle="Loading...">
+                <div className="flex items-center justify-center h-64">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">Loading transaction details...</p>
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
 
     const riskColor = user.risk_level === 'High' ? 'text-red-500 bg-red-500/10' :
         user.risk_level === 'Medium' ? 'text-amber-500 bg-amber-500/10' : 'text-emerald-500 bg-emerald-500/10';
 
-    const spendingData = Array.from({ length: 30 }, () => Math.floor(Math.random() * 10000) + 1000);
+    // Calculate spending pattern from real transactions
+    const spendingData = transactions.length > 0 
+        ? transactions.slice(0, 30).map(t => t.amount).reverse()
+        : Array.from({ length: 30 }, () => Math.floor(Math.random() * 10000) + 1000);
 
     return (
         <DashboardLayout
@@ -78,6 +228,16 @@ export default function DrillDown() {
                                         {user.risk_level} Risk
                                     </Badge>
                                     <Badge variant="outline">{user.account_status}</Badge>
+                                    {isSocketConnected && (
+                                        <Badge variant="outline" className="text-emerald-500 border-emerald-500">
+                                            • Live
+                                        </Badge>
+                                    )}
+                                    {newTransactionCount > 0 && (
+                                        <Badge className="bg-blue-500 text-white animate-pulse">
+                                            +{newTransactionCount} New
+                                        </Badge>
+                                    )}
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
                                 <p className="text-sm text-muted-foreground">{user.phone}</p>
@@ -91,11 +251,13 @@ export default function DrillDown() {
                                 <p className="text-xs text-muted-foreground">Days Active</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-2xl font-mono font-bold">{user.total_transactions}</p>
+                                <p className="text-2xl font-mono font-bold">{transactions.length}</p>
                                 <p className="text-xs text-muted-foreground">Total Txns</p>
                             </div>
                             <div className="text-center">
-                                <p className="text-2xl font-mono font-bold text-amber-500">{user.flagged_transactions}</p>
+                                <p className="text-2xl font-mono font-bold text-amber-500">
+                                    {transactions.filter(t => t.status === 'flagged' || t.status === 'declined').length}
+                                </p>
                                 <p className="text-xs text-muted-foreground">Flagged</p>
                             </div>
                             <div className="text-center">
@@ -111,19 +273,24 @@ export default function DrillDown() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                             <div>
                                 <p className="text-xs text-muted-foreground">Avg Transaction</p>
-                                <p className="font-mono font-medium">₹{user.avg_transaction_amount.toLocaleString()}</p>
+                                <p className="font-mono font-medium">
+                                    ₹{transactions.length > 0 
+                                        ? Math.floor(transactions.reduce((sum, t) => sum + t.amount, 0) / transactions.length).toLocaleString()
+                                        : user.avg_transaction_amount.toLocaleString()
+                                    }
+                                </p>
                             </div>
                             <div>
-                                <p className="text-xs text-muted-foreground">Daily Txn Count</p>
-                                <p className="font-mono font-medium">{user.daily_transaction_count}</p>
+                                <p className="text-xs text-muted-foreground">Monthly Spend</p>
+                                <p className="font-mono font-medium">₹{user.current_month_spend?.toLocaleString() || '0'}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-muted-foreground">Usual Locations</p>
-                                <p className="font-mono font-medium">{user.usual_locations.join(', ')}</p>
+                                <p className="font-mono font-medium">{user.usual_locations.join(', ') || 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="text-xs text-muted-foreground">Last Login</p>
-                                <p className="font-mono font-medium">{formatDistanceToNow(new Date(user.last_login), { addSuffix: true })}</p>
+                                <p className="text-xs text-muted-foreground">Flagged Score</p>
+                                <p className="font-mono font-medium">{user.flagged_score || 0}</p>
                             </div>
                         </div>
                     </div>
@@ -288,9 +455,16 @@ export default function DrillDown() {
 
                 {/* Transaction History */}
                 <div className="glass-card rounded-lg overflow-hidden">
-                    <div className="p-5 border-b border-border/50">
-                        <h3 className="font-semibold">User Transaction History</h3>
-                        <p className="text-sm text-muted-foreground">Recent transactions from this user</p>
+                    <div className="p-5 border-b border-border/50 flex items-center justify-between">
+                        <div>
+                            <h3 className="font-semibold">User Transaction History</h3>
+                            <p className="text-sm text-muted-foreground">Recent transactions from this user</p>
+                        </div>
+                        {isSocketConnected && (
+                            <Badge variant="outline" className="text-emerald-500 border-emerald-500">
+                                • Live Updates Active
+                            </Badge>
+                        )}
                     </div>
                     <div className="max-h-[400px] overflow-y-auto">
                         {transactions.slice(0, 10).map((txn) => (

@@ -14,12 +14,15 @@ import { TrendingUp, TrendingDown, AlertTriangle, BarChart3 } from "lucide-react
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 
+import { fetchHourlyAnalytics } from "@/lib/api";
+
 export default function Analytics() {
     const [geoData, setGeoData] = useState([]);
     const [modelData, setModelData] = useState([]);
     const [ruleData, setRuleData] = useState([]);
     const [trendData, setTrendData] = useState([]);
     const [scatterData, setScatterData] = useState([]);
+    const [peakHour, setPeakHour] = useState('Loading...');
 
     useEffect(() => {
         setGeoData(generateGeoHeatmapData());
@@ -41,6 +44,22 @@ export default function Analytics() {
             risk_score: t.risk_score,
             count: 1,
         })));
+
+        // Fetch real analytics data
+        fetchHourlyAnalytics()
+            .then(data => {
+                const hours = data.peakFraudHours || [];
+                if (hours.length > 0) {
+                    const hour = hours[0];
+                    setPeakHour(`${hour}:00 - ${hour + 1}:00`);
+                } else {
+                    setPeakHour('N/A');
+                }
+            })
+            .catch(err => {
+                console.error('Failed to fetch analytics:', err);
+                setPeakHour('N/A');
+            });
     }, []);
 
     const summaryStats = {
@@ -75,7 +94,7 @@ export default function Analytics() {
                     />
                     <StatCard
                         title="Peak Fraud Hour"
-                        value={summaryStats.peakHour}
+                        value={peakHour}
                         subtitle="Most fraud attempts"
                         icon={TrendingUp}
                         variant="info"

@@ -232,3 +232,27 @@ export const getRecentTransactions = async (req, res, next) => {
         next(error)
     }
 }
+
+// GET /api/transactions/user/:customerId - Fetch transactions for a specific user
+export const getUserTransactions = async (req, res, next) => {
+    try {
+        const { customerId } = req.params
+        const limit = parseInt(req.query.limit) || 25
+
+        const records = await fraudTransactionRepository.findByCustomerId(customerId, limit)
+
+        // Format each record to match socket emission format
+        const formatted = await Promise.all(
+            records.map(record => formatTransactionForFrontend(record))
+        )
+
+        res.json({
+            success: true,
+            count: formatted.length,
+            customer_id: customerId,
+            transactions: formatted
+        })
+    } catch (error) {
+        next(error)
+    }
+}

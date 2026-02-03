@@ -21,6 +21,16 @@ export class FraudTransactionRepository {
             }
         })
     }
+
+    async findByCustomerId(customerId, limit = 25) {
+        return await prisma.fraudTransaction.findMany({
+            where: {
+                senderCustomerId: customerId
+            },
+            orderBy: { transactionTimestamp: 'desc' },
+            take: limit
+        })
+    }
 }
 
 export default new FraudTransactionRepository()

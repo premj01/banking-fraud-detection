@@ -1,16 +1,24 @@
 import { cn } from "@/lib/utils";
-import { ArrowUpRight, ArrowDownRight, CreditCard, Wallet, ShoppingCart, ArrowLeftRight } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, CreditCard, Wallet, ShoppingCart, ArrowLeftRight, Banknote } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export function TransactionRow({ transaction, onClick }) {
+    // Map backend transaction types to icons
     const typeIcons = {
         transfer: ArrowLeftRight,
         card: CreditCard,
         withdrawal: Wallet,
         online_purchase: ShoppingCart,
+        payment: CreditCard,
+        // Backend uppercase types mapped to lowercase
+        TRANSFER: ArrowLeftRight,
+        CARD: CreditCard,
+        WITHDRAWAL: Wallet,
+        PAYMENT: CreditCard,
+        PURCHASE: ShoppingCart,
     };
 
-    const Icon = typeIcons[transaction.transaction_type];
+    const Icon = typeIcons[transaction.transaction_type] || Banknote;
 
     const statusConfig = {
         approved: { dot: 'bg-emerald-500', text: 'text-emerald-500' },
@@ -18,13 +26,18 @@ export function TransactionRow({ transaction, onClick }) {
         flagged: { dot: 'bg-amber-500', text: 'text-amber-500' },
     };
 
-    const config = statusConfig[transaction.status];
+    const config = statusConfig[transaction.status] || statusConfig.approved;
 
     const getRiskColor = (score) => {
         if (score >= 0.7) return 'text-red-500 bg-red-500/10';
         if (score >= 0.4) return 'text-amber-500 bg-amber-500/10';
         return 'text-emerald-500 bg-emerald-500/10';
     };
+
+    // Handle both nested location object and flat structure
+    const city = transaction.location?.city || transaction.city || 'Unknown';
+    const merchantName = transaction.merchant_name || transaction.receiver?.merchant_category || 'Transaction';
+    const amount = transaction.amount || transaction.amount_value || 0;
 
     return (
         <div
@@ -43,20 +56,20 @@ export function TransactionRow({ transaction, onClick }) {
                     <span className={cn("w-2 h-2 rounded-full", config.dot)} />
                 </div>
                 <p className="text-sm text-muted-foreground truncate">
-                    {transaction.merchant_name} • {transaction.location.city}
+                    {merchantName} • {city}
                 </p>
             </div>
 
             {/* Amount */}
             <div className="text-right">
                 <div className="flex items-center gap-1 justify-end">
-                    {transaction.transaction_type === 'withdrawal' ? (
+                    {transaction.transaction_type === 'withdrawal' || transaction.transaction_type === 'WITHDRAWAL' ? (
                         <ArrowDownRight className="w-3 h-3 text-red-500" />
                     ) : (
                         <ArrowUpRight className="w-3 h-3 text-muted-foreground" />
                     )}
                     <span className="font-mono font-medium">
-                        ₹{transaction.amount.toLocaleString()}
+                        ₹{amount.toLocaleString()}
                     </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -67,9 +80,9 @@ export function TransactionRow({ transaction, onClick }) {
             {/* Risk Score */}
             <div className={cn(
                 "px-3 py-1 rounded-full text-xs font-mono font-medium",
-                getRiskColor(transaction.risk_score)
+                getRiskColor(transaction.risk_score || 0)
             )}>
-                {(transaction.risk_score * 100).toFixed(0)}%
+                {((transaction.risk_score || 0) * 100).toFixed(0)}%
             </div>
 
             {/* Status */}
