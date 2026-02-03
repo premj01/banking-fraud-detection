@@ -6,7 +6,14 @@ import { ProtectedRoute } from "@/components/ProtectedRoute"
 import { Home } from "@/pages/Home"
 import { SignIn } from "@/pages/SignIn"
 import { SignUp } from "@/pages/SignUp"
-import { Dashboard } from "@/pages/Dashboard"
+import Dashboard from "@/pages/Dashboard"
+import Monitoring from "@/pages/Monitoring"
+import Analytics from "@/pages/Analytics"
+import DrillDown from "@/pages/DrillDown"
+import Investigators from "@/pages/Investigators"
+import Model from "@/pages/Model"
+import Alerts from "@/pages/Alerts"
+import Settings from "@/pages/Settings"
 
 function App() {
   return (
@@ -14,16 +21,74 @@ function App() {
       <AuthProvider>
         <Router>
           <div className="min-h-screen">
-            <Navbar />
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/signin" element={<SignIn />} />
-              <Route path="/signup" element={<SignUp />} />
+              {/* Public Routes with Navbar */}
+              <Route path="/" element={<><Navbar /><Home /></>} />
+              <Route path="/signin" element={<><Navbar /><SignIn /></>} />
+              <Route path="/signup" element={<><Navbar /><SignUp /></>} />
+
+              {/* Protected Dashboard Routes (Navbar hidden, handled by DashboardLayout) */}
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/monitoring"
+                element={
+                  <ProtectedRoute>
+                    <Monitoring />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute>
+                    <Analytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/drilldown"
+                element={
+                  <ProtectedRoute>
+                    <DrillDown />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/investigators"
+                element={
+                  <ProtectedRoute>
+                    <Investigators />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/model"
+                element={
+                  <ProtectedRoute>
+                    <Model />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/alerts"
+                element={
+                  <ProtectedRoute>
+                    <Alerts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <Settings />
                   </ProtectedRoute>
                 }
               />

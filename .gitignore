@@ -46,3 +46,7 @@ coverage/
 .cache/
 .temp/
 .tmp/
+
+
+#MCP configs By JAY
+blackbox_mcp_settings.json
