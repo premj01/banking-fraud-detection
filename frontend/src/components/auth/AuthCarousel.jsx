@@ -30,7 +30,7 @@ export function AuthCarousel() {
     }, []);
 
     return (
-        <div className="relative hidden h-[85%] w-[90%] flex-col bg-muted text-white lg:flex overflow-hidden rounded-[32px] m-auto shadow-2xl border border-white/10">
+        <div className="relative hidden h-[70vh] w-[90%] max-w-[500px] flex-col bg-muted text-white lg:flex overflow-hidden rounded-[32px] m-auto shadow-2xl border border-white/10">
             <div className="absolute inset-0 bg-zinc-900" />
 
             {/* Background Images */}

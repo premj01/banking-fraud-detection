@@ -9,7 +9,7 @@ export function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section with Blurred Background */}
-      <section className="relative flex min-h-[85vh] items-center justify-center overflow-hidden bg-zinc-950 pt-16 pb-32">
+      <section className="relative flex min-h-[75vh] items-center justify-center overflow-hidden bg-zinc-950 pt-16 pb-24">
         {/* Background Layer */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-background/80 z-10 backdrop-blur-[2px]" /> {/* Overlay for readability */}
@@ -17,38 +17,38 @@ export function Home() {
           <img
             src="/hero-dashboard.png"
             alt="Fintech Background"
-            className="w-full h-full object-cover blur-sm opacity-60"
+            className="w-full h-full object-cover object-center blur-sm opacity-60"
           />
         </div>
 
         {/* Content Layer */}
-        <div className="container relative z-20 mx-auto px-8 md:px-24 lg:px-32 max-w-[1600px]">
-          <div className="flex flex-col items-center space-y-8 text-center">
-            <div className="space-y-4 max-w-4xl">
+        <div className="container relative z-20 mx-auto px-6 md:px-16 lg:px-24 max-w-[1400px]">
+          <div className="flex flex-col items-center space-y-6 text-center">
+            <div className="space-y-4 max-w-3xl">
               <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-sm font-medium text-primary backdrop-blur-md">
                 <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
                 v2.0 is now live
               </div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl/none">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl/none">
                 Real-Time <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-blue-400">Fraud Detection</span>
               </h1>
-              <p className="mx-auto max-w-[800px] text-muted-foreground md:text-xl lg:text-2xl leading-relaxed">
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-lg lg:text-xl leading-relaxed">
                 Monitor and prevent fraudulent transactions instantly with our intelligent risk analysis platform. Built for speed, security, and scale.
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
               {user ? (
-                <Button asChild size="lg" className="h-14 px-10 text-lg shadow-lg shadow-primary/20 transition-all hover:scale-105">
+                <Button asChild size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105">
                   <Link to="/dashboard">
-                    Launch Dashboard <ArrowRight className="ml-2 h-5 w-5" />
+                    Launch Dashboard <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               ) : (
                 <>
-                  <Button asChild size="lg" className="h-14 px-10 text-lg shadow-lg shadow-primary/20 transition-all hover:scale-105">
+                  <Button asChild size="lg" className="h-12 px-8 text-base shadow-lg shadow-primary/20 transition-all hover:scale-105">
                     <Link to="/signup">Get Started Now</Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="h-14 px-10 text-lg backdrop-blur-sm bg-background/50 hover:bg-background/80">
+                  <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base backdrop-blur-sm bg-background/50 hover:bg-background/80">
                     <Link to="/signin">Login</Link>
                   </Button>
                 </>
@@ -59,15 +59,15 @@ export function Home() {
       </section>
 
       {/* What We Do Section */}
-      <section className="w-full py-24 md:py-32 bg-muted/20 relative z-10">
-        <div className="container mx-auto px-8 md:px-24 lg:px-32 max-w-[1600px]">
-          <div className="grid lg:grid-cols-2 gap-16 lg:gap-32 items-center">
-            <div className="space-y-8">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+      <section className="w-full py-20 md:py-24 bg-muted/20 relative z-10">
+        <div className="container mx-auto px-6 md:px-16 lg:px-24 max-w-[1400px]">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold tracking-tighter sm:text-3xl md:text-4xl">
                 Financial fraud is evolving. <br />
                 <span className="text-primary">Your defenses should too.</span>
               </h2>
-              <p className="text-muted-foreground text-lg md:text-xl leading-relaxed">
+              <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
                 Legacy systems can't keep up with modern threats. Our platform provides real-time transaction monitoring, automated fraud flagging, and clear visual insights to help banks and financial institutions act before damage is done.
               </p>
               <div className="space-y-4">
@@ -101,18 +101,18 @@ export function Home() {
       </section>
 
       {/* Key Features Grid */}
-      <section className="w-full py-24 md:py-32">
-        <div className="container mx-auto px-8 md:px-24 lg:px-32 max-w-[1600px]">
-          <div className="text-center mb-20">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl md:text-6xl mb-6">
+      <section className="w-full py-20 md:py-24">
+        <div className="container mx-auto px-6 md:px-16 lg:px-24 max-w-[1400px]">
+          <div className="text-center mb-16">
+            <h2 className="text-2xl font-bold tracking-tighter sm:text-4xl md:text-5xl mb-4">
               Powered by real-time intelligence
             </h2>
-            <p className="max-w-[900px] mx-auto text-muted-foreground md:text-xl/relaxed lg:text-2xl/relaxed">
+            <p className="max-w-[800px] mx-auto text-muted-foreground md:text-lg/relaxed lg:text-xl/relaxed">
               Everything you need to secure your transactions and build trust.
             </p>
           </div>
 
-          <div className="mx-auto grid gap-8 lg:grid-cols-3">
+          <div className="mx-auto grid gap-6 lg:grid-cols-3">
             {[
               {
                 icon: Globe,
@@ -130,12 +130,12 @@ export function Home() {
                 desc: "Make faster decisions with meaningful metrics instead of raw transaction noise."
               }
             ].map((feature, i) => (
-              <div key={i} className="flex flex-col items-center space-y-4 rounded-2xl border bg-card p-10 text-center shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
-                <div className="p-4 bg-primary/5 rounded-full mb-4">
-                  <feature.icon className="h-10 w-10 text-primary" />
+              <div key={i} className="flex flex-col items-center space-y-3 rounded-2xl border bg-card p-8 text-center shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
+                <div className="p-3 bg-primary/5 rounded-full mb-2">
+                  <feature.icon className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-2xl font-bold">{feature.title}</h3>
-                <p className="text-muted-foreground text-lg leading-relaxed">
+                <h3 className="text-xl font-bold">{feature.title}</h3>
+                <p className="text-muted-foreground text-base leading-relaxed">
                   {feature.desc}
                 </p>
               </div>
@@ -145,8 +145,8 @@ export function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="w-full py-12 bg-zinc-950 text-zinc-400 border-t border-zinc-900">
-        <div className="container mx-auto px-8 md:px-24 lg:px-32 max-w-[1600px] flex flex-col md:flex-row items-center justify-between gap-8">
+      <footer className="w-full py-10 bg-zinc-950 text-zinc-400 border-t border-zinc-900">
+        <div className="container mx-auto px-6 md:px-16 lg:px-24 max-w-[1400px] flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
             <p className="text-lg font-semibold text-zinc-100 mb-2">FraudShield</p>
             <p className="text-sm">
