@@ -218,6 +218,8 @@ export class FraudDetectionService {
             violations.push(`Monthly limit exceeded: ₹${projectedSpend} > ₹${senderProfile.monthlyLimit}`)
             riskScore += 0.4
             fraudReasons.unusual_amount = true
+
+            
             analysisResults.monthlyLimit = {
                 exceeded: true,
                 currentSpend: senderProfile.currentMonthSpend,
